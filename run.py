@@ -22,6 +22,13 @@ def run(args):
                                       output_hidden_states=True,
                                       output_attentions=True)
 
+    if args.params:
+        state_dict = torch.load(args.params, map_location=torch.device('cpu'))
+        allennlp_prefix = 'text_field_embedder.token_embedder_tokens.transformer_model.'
+        filtered_state_dict = {k.replace(allennlp_prefix, ''): v for (k, v) in state_dict.items()
+                               if k.startswith(allennlp_prefix)}
+        model.load_state_dict(filtered_state_dict)
+
     untokenized_sent = [token.text for token in doc]
     to_tokenize = "[CLS] " + " ".join(untokenized_sent) + " [SEP]"
     tokenized_sent = tokenizer.tokenize(to_tokenize)
@@ -87,7 +94,7 @@ PARSER.add_argument('--head', metavar='H', type=int,
                     help='Index of attention head.')
 PARSER.add_argument('--attn_dist', metavar='A', type=str,
                     help='Choice of distance metric: max, mst or js.')
-
+PARSER.add_argument('--params', type=str, help='Path to pretrained (AllenNLP) model params')
 ARGS = PARSER.parse_args()
 
 run(ARGS)
